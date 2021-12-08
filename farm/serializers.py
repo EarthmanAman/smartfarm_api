@@ -17,7 +17,6 @@ from rest_framework.serializers import (
 from  versatileimagefield.serializers import VersatileImageFieldSerializer
 from . models import (
     Crop, 
-    Image, 
     FarmerCrop,
     CropSchedule,
     Schedule,
@@ -40,7 +39,8 @@ class QuickGuideSer(ModelSerializer):
 
 class CropListSer(ModelSerializer):
     quick_guides = SerializerMethodField()
-
+    schedules = SerializerMethodField()
+    chemicals = SerializerMethodField()
     class Meta:
         model = Crop
         fields = [
@@ -49,10 +49,26 @@ class CropListSer(ModelSerializer):
             "desc",
 			"image",
             "quick_guides",
+            "schedules",
+            "chemicals",
 		]
     def get_quick_guides(self, obj):
         return QuickGuideSer(obj.quickguide_set.all(), many=True).data
 
+    def get_schedules(self, obj):
+        schedules = obj.schedule_set.all()
+        days = sum(schedules.values_list('days', flat=True))
+        context = {
+            "schedules":schedules.count(),
+            "days": days
+        }
+
+        return context
+
+    def get_chemicals(self, obj):
+        crop_chemicals = CropChemical.objects.filter(crop=obj)
+        chemicals = [chemical.chemical  for chemical in crop_chemicals]
+        return ChemicalSer(chemicals, many=True).data
 
 class ChemicalSer(ModelSerializer):
      
@@ -156,17 +172,25 @@ class FarmerCropSer(ModelSerializer):
         dates = []
         for schedule in schedules:
             if schedule.date in dates:
-                dis[str(schedule.date)].append({"name":schedule.schedule.name})
+                dis[str(schedule.date)].append({
+                    "name":schedule.schedule.name,
+                    "crop": obj.crop.name})
             else:
-                dis[str(schedule.date)] = [{"name":schedule.schedule.name}]
+                dis[str(schedule.date)] = [{"name":schedule.schedule.name, "crop": obj.crop.name}]
                 dates.append(schedule.date)
         return dis
 
     def get_statistics(self, obj):
         completed = obj.cropschedule_set.filter(done=True).count()
         uncompleted = obj.cropschedule_set.filter(done=False).count()
-        completed_perc = abs((completed / (completed + uncompleted)) * 100)
-        uncompleted_perc = abs((uncompleted / (completed + uncompleted)) * 100)
+
+        completed_perc = 0
+        uncompleted_perc = 0
+        if (completed + uncompleted) != 0:
+
+            completed_perc = abs((completed / (completed + uncompleted)) * 100)
+            uncompleted_perc = abs((uncompleted / (completed + uncompleted)) * 100)
+
         d = {
             "completed":completed,
             "uncompleted":uncompleted,

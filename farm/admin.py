@@ -6,7 +6,6 @@ from . models import (
 	Schedule,
 	Chemical,
 	CropChemical,
-	Image,
 	ChemicalSchedule,
 	CropSchedule,
 	QuickGuide

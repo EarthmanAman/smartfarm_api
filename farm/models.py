@@ -2,24 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 
 from versatileimagefield.fields import VersatileImageField, PPOIField
-class Image(models.Model):
-    
-    name     = models.CharField(max_length=255)
-   
-    image = VersatileImageField(
-       
-     'Image',
-       
-      upload_to='images/',
-       
-       ppoi_field='image_ppoi'
-        )
-   
-    image_ppoi = PPOIField()
 
-    
-    def __str__(self):
-        return self.name
 
 class Crop(models.Model):
 	name 	= models.CharField(max_length=100, unique=True)
