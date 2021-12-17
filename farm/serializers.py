@@ -57,7 +57,10 @@ class CropListSer(ModelSerializer):
 
     def get_schedules(self, obj):
         schedules = obj.schedule_set.all()
-        days = sum(schedules.values_list('days', flat=True))
+        days = 0
+        for schedule in schedules:
+            days += schedule.days
+
         context = {
             "schedules":schedules.count(),
             "days": days
@@ -255,9 +258,9 @@ class MainSer(ModelSerializer):
         dates = []
         for schedule in schedules:
             if schedule.date in dates:
-                dis[str(schedule.date)].append({"name":schedule.schedule.name, "crop":schedule.farmer_crop.crop.name})
+                dis[str(schedule.date)].append({"name":schedule.schedule.name, "crop":schedule.farmer_crop.crop.name, "activity":schedule.schedule.activity})
             else:
-                dis[str(schedule.date)] = [{"name":schedule.schedule.name, "crop":schedule.farmer_crop.crop.name}]
+                dis[str(schedule.date)] = [{"name":schedule.schedule.name, "crop":schedule.farmer_crop.crop.name, "activity":schedule.schedule.activity}]
                 dates.append(schedule.date)
         return dis
 class FarmerCropCreateSer(ModelSerializer):
