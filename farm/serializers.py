@@ -153,11 +153,12 @@ class FarmerCropSer(ModelSerializer):
         model = FarmerCrop
         fields = [
             "id",
+            "schedule_dis",
             "crop",
             "schedule",
             "date",
             "statistics",
-            "schedule_dis",
+            
         ]
 
     def get_crop(self, obj):
@@ -174,22 +175,26 @@ class FarmerCropSer(ModelSerializer):
             if schedule.date in dates:
                 dis[str(schedule.date)].append({
                     "name":schedule.schedule.name,
-                    "crop": obj.crop.name})
+                    "crop": obj.crop.name,
+                    "work": "working"
+                    }
+                    
+                )
             else:
-                dis[str(schedule.date)] = [{"name":schedule.schedule.name, "crop": obj.crop.name}]
+                dis[str(schedule.date)] = [{"name":schedule.schedule.name, "crop": obj.crop.name, "work": "working",}]
                 dates.append(schedule.date)
         return dis
 
     def get_statistics(self, obj):
-        completed = obj.cropschedule_set.filter(done=True).count()
-        uncompleted = obj.cropschedule_set.filter(done=False).count()
+        completed = obj.cropschedule_set.filter(date__lt=datetime.datetime.today()).count()
+        uncompleted = obj.cropschedule_set.filter(date__gte=datetime.datetime.today()).count()
 
         completed_perc = 0
         uncompleted_perc = 0
         if (completed + uncompleted) != 0:
 
-            completed_perc = abs((completed / (completed + uncompleted)) * 100)
-            uncompleted_perc = abs((uncompleted / (completed + uncompleted)) * 100)
+            completed_perc = round(abs((completed / (completed + uncompleted)) * 100), 2)
+            uncompleted_perc = round(abs((uncompleted / (completed + uncompleted)) * 100), 2)
 
         d = {
             "completed":completed,
@@ -250,9 +255,9 @@ class MainSer(ModelSerializer):
         dates = []
         for schedule in schedules:
             if schedule.date in dates:
-                dis[str(schedule.date)].append({"name":schedule.schedule.name})
+                dis[str(schedule.date)].append({"name":schedule.schedule.name, "crop":schedule.farmer_crop.crop.name})
             else:
-                dis[str(schedule.date)] = [{"name":schedule.schedule.name}]
+                dis[str(schedule.date)] = [{"name":schedule.schedule.name, "crop":schedule.farmer_crop.crop.name}]
                 dates.append(schedule.date)
         return dis
 class FarmerCropCreateSer(ModelSerializer):
